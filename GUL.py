@@ -3,7 +3,7 @@ import time
 import keyboard
 from pymongo import MongoClient
 
-access_token = "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"
+access_token = "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"
 headers = { "Authorization": f"token {access_token}" }
 
 def SleepForHour():
@@ -21,6 +21,17 @@ def SleepForHour():
     except KeyboardInterrupt:
         print("\nCountdown stopped.")
 
+def SleepFor10Seconds():
+    try:
+        for iS in range(10):
+            if keyboard.is_pressed("space"):
+                print("\nCountdown stopped by pressing space key while 1 second.")
+                break  # Exit the inner loop
+            print(f"\rSleeping during : [00:{59-iS:02}]; Press any key to stop countdown.", end="")
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\nCountdown stopped.")
+
 iRequestCounter = 0
 def requestToGit( url, params ):
     global headers
@@ -31,7 +42,7 @@ def requestToGit( url, params ):
         elif response.reason == 'Forbidden' or response.reason == 'Conflict' or response.reason == 'Unknown':
             return None
         else:
-            SleepForHour()
+            SleepFor10Seconds()
 
 # Connect to the local MongoDB server (default port is 27017)
 client = MongoClient("mongodb://localhost:27017/")
@@ -67,9 +78,10 @@ while True:
 
         # get repository
         user_url = f"https://api.github.com/users/{login}/repos"
-        user_repos = requestToGit(user_url, params = {'page': 1, 'per_page': 1})
+        user_repos = requestToGit(user_url, params = {})
         email_adr = ''
-        if len(user_repos) > 0:
+        repos_count = len(user_repos)
+        if repos_count > 0:
             repos_name = user_repos[0]['full_name']
             commit_data = requestToGit( f"https://api.github.com/repos/{repos_name}/commits", params = {'page': 1, 'per_page': 1})
             if commit_data and len(commit_data) > 0:
@@ -82,6 +94,7 @@ while True:
             "company": user_data.get("company"),
             "location": user_data.get("location"),
             "email": email_adr,
+            "repos_count": repos_count,
             "created_at": user_data.get("created_at")
         }
         print(user_info)
