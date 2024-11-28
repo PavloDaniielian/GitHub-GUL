@@ -3,7 +3,7 @@ import time
 import keyboard
 from pymongo import MongoClient
 
-access_token = "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"
+access_token = "asd"
 headers = { "Authorization": f"token {access_token}" }
 
 def SleepFor10Seconds():
@@ -36,15 +36,20 @@ db = client['MyDatas']  # Replace 'mydatabase' with your database name
 # Access a specific collection
 collectionList = db['GitHub_Users']  # Replace 'mycollection' with your collection name
 
-dateJoinedFrom = '2011-01-07T15:32:22Z'
-user_datas = collectionList.find({"created_at": {"$gt": dateJoinedFrom}})
+dateJoinedFrom = '2012-05-23T08:45:22Z'
+originCount = collectionList.count_documents({"created_at": {"$lte": dateJoinedFrom}})
 iCount = 0
+user_datas = collectionList.find({"created_at": {"$gt": dateJoinedFrom}})
 for user in user_datas:
     user_name = user['login']
-    user_url = f"https://api.github.com/users/{user_name}/repos"
-    user_repos = requestToGit(user_url, params = {})
-    repos_count = len(user_repos)
-    new_data = {"$set": {"repos_count": repos_count}}
+    user_url = f"https://api.github.com/users/{user_name}"
+    user_data = requestToGit(user_url, params = {})
+    new_data = { "$set":
+                { "repos_count": user_data['public_repos'],
+                "gists": user_data.get("public_gists"),
+                "followers": user_data.get("followers"),
+                "following": user_data.get("following"),
+                "updated_at": user_data.get("updated_at") } }
     collectionList.update_one( {'login': user_name}, new_data )
     iCount += 1
-    print( f"\rcurrent : {iCount}, {user_name}, repos_count: {repos_count}, created_at: {user['created_at']}                                                  ", end="" )
+    print( f"\rcount : {originCount+iCount}/{iCount}, {user_name}, repos_count: {user_data['public_repos']}, created_at: {user_data['created_at']}, gists: {user_data['public_gists']}, followers: {user_data['followers']}, following: {user_data['following']}, updated_at: {user_data['updated_at']}                ", end="" )
